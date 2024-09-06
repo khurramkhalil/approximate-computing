@@ -14,7 +14,7 @@ from torchvision.datasets import CIFAR10
 from tqdm import tqdm
 import torch.nn as nn
 
-from util_func import get_dataset, set_random_seeds, prep_adapt_dataset
+from util_func import get_dataset, prep_adapt_dataset
 
 from models.SDNs.vgg_sdn import vgg16_sdn_bn
 from models.SDNs.wideresnet_sdn import wideresnet_sdn_v1
@@ -29,6 +29,14 @@ torch.set_num_threads(threads)
 os.environ["OMP_PLACES"] = "cores"
 os.environ["OMP_PROC_BIND"] = "close"
 os.environ["OMP_WAIT_POLICY"] = "active"
+
+def get_random_seed():
+    return 1221 # 121 and 1221
+
+def set_random_seeds():
+    torch.manual_seed(get_random_seed())
+    np.random.seed(get_random_seed())
+    random.seed(get_random_seed())
 
 
 # Function to save results to CSV
