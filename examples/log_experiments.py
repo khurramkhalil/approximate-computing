@@ -88,9 +88,9 @@ fault_rates = [10, 30, 50]
 
 # Define fault points for each model
 fault_points = {
-    'vgg16_sdn_bn': ['layers.0.layers.1.0.weight'],
-    'wideresnet_sdn_v1': ['init_conv.weight'],
-    'mobilenet_sdn_v1': ['init_conv.0.weight']
+    0: ['layers.0.layers.1.0.weight'],
+    1: ['init_conv.weight'],
+    2: ['init_conv.0.weight']
 }
 
 # Set up constants
@@ -99,7 +99,7 @@ confidence_threshold = 0.5
 
 
 # Nested loops for experiments
-for model_class in models:
+for idx, model_class in enumerate(models):
     for axx_mult in approx_mults:
         for FR in fault_rates:
             print(f"Running experiment: Model: {model_class.__name__}, Approx Mult: {axx_mult}, Fault Rate: {FR}%")
@@ -177,7 +177,7 @@ for model_class in models:
                     fie.sdn_test_early_exits(model, one_batch_dataset.test_loader, confidence_threshold, uncertainty_threshold, "cpu")
             
             # Get fault points for the current model
-            FP = fault_points[model_class.__name__]
+            FP = fault_points[idx]
             # Introduce fault
             faulty_model = introduce_fault(model, FR, None, FP)
 
@@ -190,6 +190,7 @@ for model_class in models:
                 'model': model_class.__name__,
                 'approx_mult': axx_mult,
                 'fault_rate': FR,
+                'fault_points': ','.join(FP),
                 'top1_acc': top1_acc,
                 'top5_acc': top5_acc,
                 'early_output_counts': ','.join(map(str, early_output_counts)),
