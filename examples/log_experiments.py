@@ -40,15 +40,17 @@ def set_random_seeds():
 
 
 # Function to save results to CSV
-def save_results_to_csv(results, filename):
-    keys = results[0].keys()
-    with open(filename, 'w', newline='') as output_file:
-        dict_writer = csv.DictWriter(output_file, keys)
-        dict_writer.writeheader()
-        dict_writer.writerows(results)
+def save_result_to_csv(result, filename, file_exists=False):
+    mode = 'a' if file_exists else 'w'
+    with open(filename, mode, newline='') as output_file:
+        dict_writer = csv.DictWriter(output_file, result.keys())
+        if not file_exists:
+            dict_writer.writeheader()
+        dict_writer.writerow(result)
 
-# List to store all experiment results
-all_results = []
+# Generate CSV filename
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+csv_filename = f"experiment_results_{timestamp}.csv"
 
 def introduce_fault(model, percent_of_faults, fault_loc = None, layer_to_attack = None):
     model.eval()
@@ -207,14 +209,12 @@ for model_class in models:
                     'unc_violation_counts_no_fault': ','.join(map(str, unc_violation_counts_no_fault))
                 })
 
-            all_results.append(result)
+            # Save result to CSV
+            save_result_to_csv(result, csv_filename, file_exists=os.path.exists(csv_filename))
 
             # Print results
             print("Results:", result)
+            print(f"Results saved to {csv_filename}")
             print("-" * 80)
 
-# Save all results to CSV
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-csv_filename = f"experiment_results_{timestamp}.csv"
-save_results_to_csv(all_results, csv_filename)
-print(f"Results saved to {csv_filename}")
+print(f"All experiments completed. Results saved to {csv_filename}")
