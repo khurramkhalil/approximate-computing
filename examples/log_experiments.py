@@ -88,7 +88,7 @@ fault_rates = [10, 30, 50]
 
 # Define fault points for each model
 fault_points = {
-    0: ['layers.0.layers.1.0.weight'],
+    0: ['layers.0.layers.0.weight'],
     1: ['init_conv.weight'],
     2: ['init_conv.0.weight']
 }
