@@ -83,7 +83,7 @@ def introduce_fault(model, percent_of_faults, fault_loc = None, layer_to_attack 
 
 # Define the models, approximate multipliers, and fault rates
 models = [vgg16_sdn_bn, wideresnet_sdn_v1, mobilenet_sdn_v1]
-approx_mults = ['mul8s_1L2H', 'mul8s_1L2L', 'mul8s_1L2N', 'mul8s_1L12']
+approx_mults = ['mul8s_1KV6', 'mul8s_1KV8', 'mul8s_1KV9', 'mul8s_1KVP', 'mul8s_1L2J', 'mul8s_1L2H', 'mul8s_1L2N', 'mul8s_1L12']
 fault_rates = [10, 30, 50]
 
 # Define fault points for each model
