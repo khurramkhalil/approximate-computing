@@ -39,7 +39,7 @@ class ConvBlockWOutput(nn.Module):
 
 
         conv_layers = []
-        conv_layers.append(approxNN.AdaPT_Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3,padding=1, stride=1))
+        conv_layers.append(approxNN.AdaPT_Conv2d(in_channels=input_channels, out_channels=output_channels, kernel_size=3,padding=1, stride=1, axx_mult=axx_mult_global))
 
         if batch_norm:
             conv_layers.append(nn.BatchNorm2d(output_channels))
@@ -91,7 +91,7 @@ class FcBlockWOutput(nn.Module):
             fc_layers.append(nn.Flatten())
 
         if approx_linear:
-            fc_layers.append(approxNN.AdaPT_Linear(input_size, output_size))
+            fc_layers.append(approxNN.AdaPT_Linear(input_size, output_size, axx_mult=axx_mult_global))
         else:
             fc_layers.append(nn.Linear(input_size, output_size))
         fc_layers.append(nn.ReLU())
@@ -100,7 +100,7 @@ class FcBlockWOutput(nn.Module):
 
         if add_output:
             if approx_linear:
-                self.output = approxNN.AdaPT_Linear(output_size, num_classes)
+                self.output = approxNN.AdaPT_Linear(output_size, num_classes, axx_mult=axx_mult_global)
             else:
                 self.output = nn.Linear(output_size, num_classes)
             self.no_output = False
@@ -172,13 +172,13 @@ class VGG_SDN(nn.Module):
         
         end_layers = []
         if approx_linear:
-            end_layers.append(approxNN.AdaPT_Linear(fc_input_size, self.fc_layer_sizes[-1]))
+            end_layers.append(approxNN.AdaPT_Linear(fc_input_size, self.fc_layer_sizes[-1], axx_mult=axx_mult_global))
         else:
             end_layers.append(nn.Linear(fc_input_size, self.fc_layer_sizes[-1]))
         
         end_layers.append(nn.Dropout(0.5))
         if approx_linear:
-            end_layers.append(approxNN.AdaPT_Linear(self.fc_layer_sizes[-1], self.num_classes))
+            end_layers.append(approxNN.AdaPT_Linear(self.fc_layer_sizes[-1], self.num_classes, axx_mult=axx_mult_global))
         else:
             end_layers.append(nn.Linear(self.fc_layer_sizes[-1], self.num_classes))
 
@@ -323,7 +323,7 @@ class InternalClassifier(nn.Module):
 
         if red_kernel_size == -1:
             if approx_linear:
-                self.linear = approxNN.AdaPT_Linear(output_channels*input_size*input_size, num_classes)
+                self.linear = approxNN.AdaPT_Linear(output_channels*input_size*input_size, num_classes, axx_mult=axx_mult_global)
             else:
                 self.linear = nn.Linear(output_channels*input_size*input_size, num_classes)
             self.forward = self.forward_wo_pooling
@@ -333,7 +333,7 @@ class InternalClassifier(nn.Module):
             self.avg_pool = nn.AvgPool2d(kernel_size=red_kernel_size)
             self.alpha = nn.Parameter(torch.rand(1))
             if approx_linear:
-                self.linear = approxNN.AdaPT_Linear(output_channels*red_input_size*red_input_size, num_classes)
+                self.linear = approxNN.AdaPT_Linear(output_channels*red_input_size*red_input_size, num_classes, axx_mult=axx_mult_global)
             else:
                 self.linear = nn.Linear(output_channels*red_input_size*red_input_size, num_classes)
             self.forward = self.forward_w_pooling

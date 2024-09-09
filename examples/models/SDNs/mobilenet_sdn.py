@@ -35,10 +35,10 @@ class BlockWOutput(nn.Module):
         self.depth = 2
 
         conv_layers = []
-        conv_layers.append(approxNN.AdaPT_Conv2d(in_channels, in_channels, kernel_size=3, stride=stride, padding=1, groups=in_channels, bias=False))
+        conv_layers.append(approxNN.AdaPT_Conv2d(in_channels, in_channels, kernel_size=3, stride=stride, padding=1, groups=in_channels, bias=False, axx_mult=axx_mult_global))
         conv_layers.append(nn.BatchNorm2d(in_channels))
         conv_layers.append(nn.ReLU())
-        conv_layers.append(approxNN.AdaPT_Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False))
+        conv_layers.append(approxNN.AdaPT_Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0, bias=False, axx_mult=axx_mult_global))
         conv_layers.append(nn.BatchNorm2d(out_channels))
         conv_layers.append(nn.ReLU())
 
@@ -82,7 +82,7 @@ class MobileNet_SDN(nn.Module):
         self.cur_output_id = 0
 
         init_conv = []
-        init_conv.append(approxNN.AdaPT_Conv2d(3, self.in_channels, kernel_size=3, stride=1, padding=1, bias=False))
+        init_conv.append(approxNN.AdaPT_Conv2d(3, self.in_channels, kernel_size=3, stride=1, padding=1, bias=False, axx_mult=axx_mult_global))
         init_conv.append(nn.BatchNorm2d(self.in_channels))
         init_conv.append(nn.ReLU(inplace=True))
         self.init_conv = nn.Sequential(*init_conv)
@@ -98,7 +98,7 @@ class MobileNet_SDN(nn.Module):
 
         end_layers.append(nn.Flatten())
         if approx_linear:
-            end_layers.append(approxNN.AdaPT_Linear(1024, self.num_classes))
+            end_layers.append(approxNN.AdaPT_Linear(1024, self.num_classes, axx_mult=axx_mult_global))
         else:
             end_layers.append(nn.Linear(1024, self.num_classes))
         self.end_layers = nn.Sequential(*end_layers)
@@ -242,7 +242,7 @@ class InternalClassifier(nn.Module):
 
         if red_kernel_size == -1:
             if approx_linear:
-                self.linear = approxNN.AdaPT_Linear(output_channels*input_size*input_size, num_classes)
+                self.linear = approxNN.AdaPT_Linear(output_channels*input_size*input_size, num_classes, axx_mult=axx_mult_global)
             else:
                 self.linear = nn.Linear(output_channels*input_size*input_size, num_classes)
             self.forward = self.forward_wo_pooling
@@ -252,7 +252,7 @@ class InternalClassifier(nn.Module):
             self.avg_pool = nn.AvgPool2d(kernel_size=red_kernel_size)
             self.alpha = nn.Parameter(torch.rand(1))
             if approx_linear:
-                self.linear = approxNN.AdaPT_Linear(output_channels*red_input_size*red_input_size, num_classes)
+                self.linear = approxNN.AdaPT_Linear(output_channels*red_input_size*red_input_size, num_classes, axx_mult=axx_mult_global)
             else:
                 self.linear = nn.Linear(output_channels*red_input_size*red_input_size, num_classes)
             self.forward = self.forward_w_pooling

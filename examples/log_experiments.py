@@ -97,6 +97,8 @@ fault_points = {
 uncertainty_threshold = 8
 confidence_threshold = 0.5
 
+# Initialize previous model placeholder
+previous_model = None
 
 # Nested loops for experiments
 for idx, model_class in enumerate(models):
@@ -172,9 +174,18 @@ for idx, model_class in enumerate(models):
                 # amax = compute_amax(model, method="entropy")
 
             # Test without fault only if this is the first time running this experiment
-            if FR == 10:
+            if FR == 10 or model_class != previous_model:
                 top1_acc_no_fault, top5_acc_no_fault, early_output_counts_no_fault, non_conf_output_counts_no_fault, conf_violation_counts_no_fault, unc_violation_counts_no_fault = \
                     fie.sdn_test_early_exits(model, one_batch_dataset.test_loader, confidence_threshold, uncertainty_threshold, "cpu")
+                no_fault_model_results = {
+                    'top1_acc_no_fault': top1_acc_no_fault,
+                    'top5_acc_no_fault': top5_acc_no_fault,
+                    'early_output_counts_no_fault': ','.join(map(str, early_output_counts_no_fault)),
+                    'non_conf_output_counts_no_fault': ','.join(map(str, non_conf_output_counts_no_fault)),
+                    'conf_violation_counts_no_fault': ','.join(map(str, conf_violation_counts_no_fault)),
+                    'unc_violation_counts_no_fault': ','.join(map(str, unc_violation_counts_no_fault))
+                }
+                previous_model = model_class
             
             # Get fault points for the current model
             FP = fault_points[idx]
@@ -201,14 +212,7 @@ for idx, model_class in enumerate(models):
 
             # Add no-fault results if FR is 10
             if FR == 10:
-                result.update({
-                    'top1_acc_no_fault': top1_acc_no_fault,
-                    'top5_acc_no_fault': top5_acc_no_fault,
-                    'early_output_counts_no_fault': ','.join(map(str, early_output_counts_no_fault)),
-                    'non_conf_output_counts_no_fault': ','.join(map(str, non_conf_output_counts_no_fault)),
-                    'conf_violation_counts_no_fault': ','.join(map(str, conf_violation_counts_no_fault)),
-                    'unc_violation_counts_no_fault': ','.join(map(str, unc_violation_counts_no_fault))
-                })
+                result.update(no_fault_model_results)
 
             # Save result to CSV
             save_result_to_csv(result, csv_filename, file_exists=os.path.exists(csv_filename))
