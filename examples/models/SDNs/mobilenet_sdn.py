@@ -198,6 +198,42 @@ class MobileNet_SDN(nn.Module):
         else:
             return outputs[min_uncertain_output], min_uncertain_output, is_early, violations
 
+    # takes a single input
+    def early_exit_only(self, x):
+        confidences = []
+        outputs = []
+
+        violations = [] 
+
+        fwd = self.init_conv(x)
+        output_id = 0
+        for layer in self.layers:
+            fwd, is_output, output = layer(fwd)
+
+            if is_output:
+                outputs.append(output)
+                softmax = nn.functional.softmax(output[0], dim=0)
+                
+                confidence = torch.max(softmax)
+                confidences.append(confidence)
+            
+                if confidence >= self.confidence_threshold:
+                    is_early = True
+                    return output, output_id, is_early, violations
+                else:
+                    violations.append([output_id, 'conf'])
+                
+                output_id += is_output
+
+        output = self.end_layers(fwd)
+        outputs.append(output)
+
+        softmax = nn.functional.softmax(output[0], dim=0)
+        confidence = torch.max(softmax)
+        confidences.append(confidence)
+        max_confidence_output = np.argmax(confidences)
+        is_early = False
+        return outputs[max_confidence_output], max_confidence_output, is_early, violations
 
 def _wideresnet(arch, pretrained, progress, device, **kwargs):
     model = MobileNet_SDN(**kwargs)
