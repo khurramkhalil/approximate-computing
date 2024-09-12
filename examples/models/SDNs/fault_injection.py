@@ -1,84 +1,7 @@
 import torch
 import numpy as np
 import random
-from collections import deque
-
-class DifferentialWeightSnapshots:
-    def __init__(self, model, snapshot_frequency=100, max_snapshots=5, compression_ratio=0.1):
-        self.model = model
-        self.snapshot_frequency = snapshot_frequency
-        self.max_snapshots = max_snapshots
-        self.compression_ratio = compression_ratio
-        self.initial_state = self.get_model_state()
-        self.snapshots = deque(maxlen=max_snapshots)
-        self.iteration = 0
-        
-    def get_model_state(self):
-        return {name: param.data.clone() for name, param in self.model.named_parameters()}
-    
-    def compress_differences(self, differences):
-        compressed = {}
-        for name, diff in differences.items():
-            flat_diff = diff.flatten()
-            k = int(len(flat_diff) * self.compression_ratio)
-            values, indices = torch.topk(flat_diff.abs(), k)
-            compressed[name] = (values, indices, flat_diff.shape)
-        return compressed
-    
-    def decompress_differences(self, compressed):
-        decompressed = {}
-        for name, (values, indices, shape) in compressed.items():
-            flat_diff = torch.zeros(shape.numel(), device=values.device)
-            flat_diff[indices] = values
-            decompressed[name] = flat_diff.reshape(shape)
-        return decompressed
-    
-    def take_snapshot(self):
-        current_state = self.get_model_state()
-        differences = {name: (current_state[name] - self.initial_state[name]) for name in current_state}
-        compressed_diff = self.compress_differences(differences)
-        self.snapshots.append(compressed_diff)
-    
-    def restore_from_snapshot(self):
-        if not self.snapshots:
-            return
-        
-        latest_snapshot = self.snapshots[-1]
-        decompressed_diff = self.decompress_differences(latest_snapshot)
-        
-        with torch.no_grad():
-            for name, param in self.model.named_parameters():
-                param.data.copy_(self.initial_state[name] + decompressed_diff[name])
-    
-    def step(self):
-        self.iteration += 1
-        if self.iteration % self.snapshot_frequency == 0:
-            self.take_snapshot()
-
-def introduce_fault_with_dws(model, percent_of_faults, fault_loc=None, layer_to_attack=None, dws=None):
-    model.eval()
-    for name, param in model.named_parameters():
-        if layer_to_attack == name:
-            print("Attacked layer", name)
-            print(param.shape)
-            w1 = param.data
-            wf1 = torch.flatten(w1)
-            no_of_faults = int(percent_of_faults * len(wf1) / 100)
-            if no_of_faults > len(wf1):
-                no_of_faults = len(wf1)
-
-            print("Number of weights attacked", no_of_faults)
-            if fault_loc is None:
-                fault_loc = random.sample(range(0, len(wf1)), no_of_faults)
-            for i in range(0, len(fault_loc)):
-                wf1[fault_loc[i]] = -wf1[fault_loc[i]]
-            wf11 = wf1.reshape(w1.shape)
-            param.data = wf11
-    
-    if dws:
-        dws.restore_from_snapshot()
-    
-    return model
+from tqdm import tqdm
 
 from models.SDNs import data
 
@@ -144,7 +67,8 @@ def sdn_test_uncertainty(model, loader, device='cpu', dws=None):
         preds[output_id] = []
 
     with torch.no_grad():
-        for batch in loader:
+        # Wrap the loader with tqdm for progress bar
+        for batch in tqdm(loader, desc="Testing", leave=False):
             b_x = batch[0].to(device)
             b_y = batch[1].to(device)
             output = model(b_x)
