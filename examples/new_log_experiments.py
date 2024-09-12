@@ -51,7 +51,7 @@ def save_result_to_csv(result, filename, file_exists=False):
 
 # Generate CSV filename
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-csv_filename = f"new_experiment_results_{timestamp}.csv"
+csv_filename = f"joint_experiment_results_{timestamp}.csv"
 
 
 # Define the models, approximate multipliers, and fault rates
@@ -68,6 +68,7 @@ fault_points = {
 
 # Set up constants
 confidence_threshold = 0.5
+uncertainty_threshold = 8
 
 # Nested loops for experiments
 for idx, model_class in enumerate(models):
@@ -150,7 +151,7 @@ for idx, model_class in enumerate(models):
 
             # Test with fault
             top1_acc, top5_acc, early_output_counts, non_conf_output_counts, conf_violation_counts, unc_viol_with_fault = \
-                sdm.sdn_test_early_exits_sdm(faulty_model, one_batch_dataset.test_loader, confidence_threshold, "cpu")
+                sdm.sdn_test_early_exits_sdm(faulty_model, one_batch_dataset.test_loader, confidence_threshold, uncertainty_threshold, "cpu")
 
             # Store results
             result = {
