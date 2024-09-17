@@ -12,7 +12,7 @@ from adapt.approx_layers import axx_layers as approxNN
 #set flag for use of AdaPT custom layers or vanilla PyTorch
 use_adapt=True
 
-approx_linear = True
+approx_linear = False
 
 #set axx mult. default = accurate
 axx_mult_global = 'mul8s_1L2N'
@@ -235,15 +235,24 @@ class MobileNet_SDN(nn.Module):
         is_early = False
         return outputs[max_confidence_output], max_confidence_output, is_early, violations
 
-def _wideresnet(arch, pretrained, progress, device, **kwargs):
-    model = MobileNet_SDN(**kwargs)
+def _mobilenet(arch, pretrained, progress, device, dataset_name, **kwargs):
     if pretrained:
         script_dir = os.path.dirname(__file__)
         script_dir= script_dir.rsplit('/', 1)[0]
-        state_dict = torch.load(
-            script_dir + "/state_dicts/" + arch + ".pt", map_location=device
-        )
+
+        if dataset_name == "CIFAR10":
+            kwargs["num_classes"] = 10
+            state_dict = torch.load(script_dir + "/state_dicts/" + arch + ".pt", map_location=device)
+
+        elif dataset_name == "CIFAR100":
+            kwargs["num_classes"] = 100
+            state_dict = torch.load(script_dir + "/state_dicts/" + arch + "_" + dataset_name + ".pt", map_location=device)
+        
+        model = MobileNet_SDN(**kwargs)
         model.load_state_dict(state_dict)
+    else:
+        model = MobileNet_SDN(**kwargs)
+
     return model
 
 
@@ -257,7 +266,7 @@ def mobilenet_sdn_v1(pretrained=False, path=False, progress=True, device="cpu", 
     global axx_mult_global
     axx_mult_global = axx_mult
     
-    return _wideresnet("mobilenet_sdn_v1", pretrained, progress, device, **kwargs)
+    return _mobilenet("mobilenet_sdn_v1", pretrained, progress, device, **kwargs)
 
 
 

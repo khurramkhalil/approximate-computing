@@ -12,7 +12,7 @@ from adapt.approx_layers import axx_layers as approxNN
 #set flag for use of AdaPT custom layers or vanilla PyTorch
 use_adapt=True
 
-approx_linear = True
+approx_linear = False
 
 #set axx mult. default = accurate
 axx_mult_global = 'mul8s_1L2N'
@@ -79,7 +79,7 @@ class wide_basic(nn.Module):
         return fwd, 1, self.output(fwd)
 
 class WideResNet_SDN(nn.Module):
-    def __init__(self,  num_classes=10):
+    def __init__(self,  num_classes=10, init_weights=True):
         super(WideResNet_SDN, self).__init__()
         self.num_blocks = [5,5,5]
         self.widen_factor = 4
@@ -88,7 +88,7 @@ class WideResNet_SDN(nn.Module):
         self.input_size = 32
         self.add_out_nonflat = [[0, 0, 1, 0, 1], [0, 1, 0, 1, 0], [1, 0, 1, 0, 0]]  # 15, 30, 45, 60, 75, 90 percent of GFLOPs
         self.add_output = [item for sublist in self.add_out_nonflat for item in sublist]
-        self.init_weights = True
+        self.init_weights = init_weights
         self.in_channels = 16
         self.num_output = sum(self.add_output) + 1
 
@@ -266,19 +266,31 @@ class WideResNet_SDN(nn.Module):
         return outputs[max_confidence_output], max_confidence_output, is_early, violations
         
 
-def _wideresnet(arch, pretrained, progress, device, **kwargs):
-    model = WideResNet_SDN(**kwargs)
+def _wideresnet(arch, pretrained, progress, device, dataset_name, **kwargs):
+
     if pretrained:
+        kwargs["init_weights"] = False
+
         script_dir = os.path.dirname(__file__)
         script_dir= script_dir.rsplit('/', 1)[0]
-        state_dict = torch.load(
-            script_dir + "/state_dicts/" + arch + ".pt", map_location=device
-        )
+
+        if dataset_name == "CIFAR10":
+            kwargs["num_classes"] = 10
+            state_dict = torch.load(script_dir + "/state_dicts/" + arch + ".pt", map_location=device)
+
+        elif dataset_name == "CIFAR100":
+            kwargs["num_classes"] = 100
+            state_dict = torch.load(script_dir + "/state_dicts/" + arch + "_" + dataset_name + ".pt", map_location=device)
+        
+        model = WideResNet_SDN(**kwargs)
         model.load_state_dict(state_dict)
+    else:
+        model = WideResNet_SDN(**kwargs)
+
     return model
 
 
-def wideresnet_sdn_v1(pretrained=False, path=False, progress=True, device="cpu", axx_mult = 'mul8s_1L2N', **kwargs):
+def wideresnet_sdn_v1(pretrained=False, progress=True, device="cpu", axx_mult = 'mul8s_1L2N', dataset_name="CIFAR10", **kwargs):
     """wideresnet_v1r model with batch normalization
 
     Args:
@@ -288,7 +300,7 @@ def wideresnet_sdn_v1(pretrained=False, path=False, progress=True, device="cpu",
     global axx_mult_global
     axx_mult_global = axx_mult
     
-    return _wideresnet("wideresnet_sdn_v1", pretrained, progress, device, **kwargs)
+    return _wideresnet("wideresnet_sdn_v1", pretrained, progress, device, dataset_name, **kwargs)
 
 
 

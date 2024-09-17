@@ -318,20 +318,29 @@ class VGG_SDN(nn.Module):
         return outputs[max_confidence_output], max_confidence_output, is_early, violations
         
 
-def _vgg(arch, pretrained, progress, device, **kwargs):
+def _vgg(arch, pretrained, progress, device, dataset_name, **kwargs):
     if pretrained:
         kwargs["init_weights"] = False
-    model = VGG_SDN(**kwargs)
-    if pretrained:
+
         script_dir = os.path.dirname(__file__)
         script_dir= script_dir.rsplit('/', 1)[0]
-        state_dict = torch.load(
-            script_dir + "/state_dicts/" + arch + ".pt", map_location=device
-        )
+
+        if dataset_name == "CIFAR10":
+            kwargs["num_classes"] = 10
+            state_dict = torch.load(script_dir + "/state_dicts/" + arch + ".pt", map_location=device)
+
+        elif dataset_name == "CIFAR100":
+            kwargs["num_classes"] = 100
+            state_dict = torch.load(script_dir + "/state_dicts/" + arch + "_" + dataset_name + ".pt", map_location=device)
+        
+        model = VGG_SDN(**kwargs)
         model.load_state_dict(state_dict)
+    else:
+        model = VGG_SDN(**kwargs)
+    
     return model
 
-def vgg16_sdn_bn(pretrained=False, progress=True, device="cpu", axx_mult = 'mul8s_acc', **kwargs):
+def vgg16_sdn_bn(pretrained=False, progress=True, device="cpu", axx_mult = 'mul8s_acc', dataset_name="CIFAR10", **kwargs):
     """VGG 16-layer model (configuration "D") with batch normalization
 
     Args:
@@ -341,7 +350,7 @@ def vgg16_sdn_bn(pretrained=False, progress=True, device="cpu", axx_mult = 'mul8
     global axx_mult_global
     axx_mult_global = axx_mult
     
-    return _vgg("vgg16_sdn_bn", pretrained, progress, device, **kwargs)
+    return _vgg("vgg16_sdn_bn", pretrained, progress, device, dataset_name, **kwargs)
 
 # the formula for feature reduction in the internal classifiers
 def feature_reduction_formula(input_feature_map_size):
