@@ -22,7 +22,7 @@ from models.SDNs.mobilenet_sdn import mobilenet_sdn_v1
 # import models.SDNs.fault_injection as fie
 import models.SDNs.sdm_fault_mitigation as sdm
 
-threads = 55
+threads = 20
 torch.set_num_threads(threads)
 
 # maybe better performance
@@ -51,12 +51,12 @@ def save_result_to_csv(result, filename, file_exists=False):
 
 # Generate CSV filename
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-csv_filename = f"joint_experiment_results_{timestamp}.csv"
+csv_filename = f"multi_dataset_experiment_results_{timestamp}.csv"
 
 
 # Define the models, approximate multipliers, and fault rates
 models = [vgg16_sdn_bn, wideresnet_sdn_v1, mobilenet_sdn_v1]
-approx_mults = ['mul8s_1L2N', 'mul8s_1L12']
+approx_mults = ['mul8s_1KV6', 'mul8s_1KV8', 'mul8s_1KV9', 'mul8s_1KVP', 'mul8s_1L2J', 'mul8s_1L2H', 'mul8s_1L2N', 'mul8s_1L12']
 fault_rates = [10, 30, 50]
 
 # Define fault points for each model
@@ -68,7 +68,10 @@ fault_points = {
 
 # Set up constants
 confidence_threshold = 0.5
-uncertainty_threshold = 8
+uncertainty_threshold = -8
+
+# dataset name
+dataset_name = "CIFAR100"
 
 # Nested loops for experiments
 for idx, model_class in enumerate(models):
@@ -77,7 +80,7 @@ for idx, model_class in enumerate(models):
             print(f"Running experiment: Model: {model_class.__name__}, Approx Mult: {axx_mult}, Fault Rate: {FR}%")
             
             # Initialize model
-            model = model_class(pretrained=True, axx_mult=axx_mult)
+            model = model_class(pretrained=True, axx_mult=axx_mult, dataset_name=dataset_name)
             model.eval()
 
             # Set random seeds and prepare datasets

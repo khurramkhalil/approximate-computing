@@ -104,15 +104,18 @@ class StatisticalDistributionMonitoring:
             return self.check_distributions()
         return []
 
-def targeted_fault_mitigation(model, layer_name):
+def targeted_fault_mitigation(sdm, model, layer_name):
     parameter = dict(model.named_parameters())[layer_name]
     with torch.no_grad():
         mean = parameter.data.mean()
         std = parameter.data.std()
+
+        # mean = sdm.initial_stats[layer_name]['mean']
+        # std = sdm.initial_stats[layer_name]['std']
+
         # Replace extreme outliers with values drawn from a normal distribution
         mask = torch.abs(parameter.data - mean) > 3 * std
         # parameter.data[mask] = torch.normal(mean, std, size=parameter.data[mask].shape)
-        parameter.data[mask] = 0
 
 def sdn_test_early_exits_sdm(model, loader, confidence_threshold=0.5, uncertainty_threshold=None, device='cpu'):
     model.forward = model.early_exit
@@ -196,7 +199,7 @@ def introduce_fault_with_sdm(model, percent_of_faults, fault_loc=None, layer_to_
     correction = 0
     if affected_layers:
         for affected_layer in affected_layers:
-            targeted_fault_mitigation(model, affected_layer)
+            targeted_fault_mitigation(sdm, model, affected_layer)
             correction += 1
     
     return model, correction
