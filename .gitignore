@@ -24,3 +24,5 @@ build/
 mnist_data/
 cifar10_data/
 imagenet_data/
+examples/datasets/
+adapt/approx_layers/
