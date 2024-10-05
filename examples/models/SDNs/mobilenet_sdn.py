@@ -66,7 +66,7 @@ class BlockWOutput(nn.Module):
 
 class MobileNet_SDN(nn.Module):
     # (128,2) means conv channels=128, conv stride=2, by default conv stride=1
-    def __init__(self,  num_classes=10):
+    def __init__(self,  num_classes=10, input_channel=3):
         super(MobileNet_SDN, self).__init__()
         self.cfg = [64, (128,2), 128, (256,2), 256, (512,2), 512, 512, 512, 512, 512, (1024,2), 1024]
         self.num_classes = num_classes
@@ -82,7 +82,7 @@ class MobileNet_SDN(nn.Module):
         self.cur_output_id = 0
 
         init_conv = []
-        init_conv.append(approxNN.AdaPT_Conv2d(3, self.in_channels, kernel_size=3, stride=1, padding=1, bias=False, axx_mult=axx_mult_global))
+        init_conv.append(approxNN.AdaPT_Conv2d(input_channel, self.in_channels, kernel_size=3, stride=1, padding=1, bias=False, axx_mult=axx_mult_global))
         init_conv.append(nn.BatchNorm2d(self.in_channels))
         init_conv.append(nn.ReLU(inplace=True))
         self.init_conv = nn.Sequential(*init_conv)
@@ -243,6 +243,16 @@ def _mobilenet(arch, pretrained, progress, device, dataset_name, **kwargs):
         if dataset_name == "CIFAR10":
             kwargs["num_classes"] = 10
             state_dict = torch.load(script_dir + "/state_dicts/" + arch + ".pt", map_location=device)
+
+        elif dataset_name == "mnist":
+            kwargs["num_classes"] = 10
+            kwargs["input_channel"] = 1
+            state_dict = torch.load(script_dir + "/state_dicts/" + "mnist_" + arch + ".pt", map_location=device)
+
+        elif dataset_name == "fashion_mnist":
+            kwargs["num_classes"] = 10
+            kwargs["input_channel"] = 1
+            state_dict = torch.load(script_dir + "/state_dicts/" + "fashion_mnist_" + arch + ".pt", map_location=device)
 
         elif dataset_name == "CIFAR100":
             kwargs["num_classes"] = 100

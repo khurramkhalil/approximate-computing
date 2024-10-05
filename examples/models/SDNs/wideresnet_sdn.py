@@ -79,7 +79,7 @@ class wide_basic(nn.Module):
         return fwd, 1, self.output(fwd)
 
 class WideResNet_SDN(nn.Module):
-    def __init__(self,  num_classes=10, init_weights=True):
+    def __init__(self,  num_classes=10, init_weights=True, input_channel=3):
         super(WideResNet_SDN, self).__init__()
         self.num_blocks = [5,5,5]
         self.widen_factor = 4
@@ -96,13 +96,13 @@ class WideResNet_SDN(nn.Module):
         self.end_depth = 1
         self.cur_output_id = 0
 
-
+        
         if self.input_size ==  32: # cifar10 and cifar100
             self.cur_input_size = self.input_size
-            self.init_conv = approxNN.AdaPT_Conv2d(3, self.in_channels, kernel_size=3, stride=1, padding=1, bias=True, axx_mult=axx_mult_global)
+            self.init_conv = approxNN.AdaPT_Conv2d(input_channel, self.in_channels, kernel_size=3, stride=1, padding=1, bias=True, axx_mult=axx_mult_global)
         elif self.input_size == 64: # tiny imagenet
             self.cur_input_size = int(self.input_size/2)
-            self.init_conv = approxNN.AdaPT_Conv2d(3, self.in_channels, kernel_size=3, stride=2, padding=1, bias=True, axx_mult=axx_mult_global)
+            self.init_conv = approxNN.AdaPT_Conv2d(input_channel, self.in_channels, kernel_size=3, stride=2, padding=1, bias=True, axx_mult=axx_mult_global)
             
         self.layers = nn.ModuleList()
         self.layers.extend(self._wide_layer(wide_basic, self.in_channels*self.widen_factor, block_id=0, stride=1))
@@ -277,6 +277,17 @@ def _wideresnet(arch, pretrained, progress, device, dataset_name, **kwargs):
         if dataset_name == "CIFAR10":
             kwargs["num_classes"] = 10
             state_dict = torch.load(script_dir + "/state_dicts/" + arch + ".pt", map_location=device)
+
+        elif dataset_name == "mnist":
+            kwargs["num_classes"] = 10
+            kwargs["input_channel"] = 1
+            state_dict = torch.load(script_dir + "/state_dicts/" + "mnist_" + arch + ".pt", map_location=device)
+
+        elif dataset_name == "fashion_mnist":
+            kwargs["num_classes"] = 10
+            kwargs["input_channel"] = 1
+            state_dict = torch.load(script_dir + "/state_dicts/" + "fashion_mnist_" + arch + ".pt", map_location=device)
+
 
         elif dataset_name == "CIFAR100":
             kwargs["num_classes"] = 100

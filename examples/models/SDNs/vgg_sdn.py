@@ -4,6 +4,7 @@ import math
 
 import torch.nn as nn
 import numpy as np
+import pdb
 
 ######################## ADAPT ########################
 from adapt.approx_layers import axx_layers as approxNN
@@ -121,7 +122,7 @@ class FcBlockWOutput(nn.Module):
         return self.layers(x), 0, None
 
 class VGG_SDN(nn.Module):
-    def __init__(self, num_classes=10, init_weights=True):
+    def __init__(self, num_classes=10, init_weights=True, input_channel=3):
         super(VGG_SDN, self).__init__()
         # read necessary parameters
         self.input_size = 32
@@ -143,7 +144,7 @@ class VGG_SDN(nn.Module):
         self.end_depth = 2
 
         # add conv layers
-        input_channel = 3
+        input_channel = input_channel
         cur_input_size = self.input_size
         output_id = 0
         for layer_id, channel in enumerate(self.conv_channels):
@@ -328,6 +329,17 @@ def _vgg(arch, pretrained, progress, device, dataset_name, **kwargs):
         if dataset_name == "CIFAR10":
             kwargs["num_classes"] = 10
             state_dict = torch.load(script_dir + "/state_dicts/" + arch + ".pt", map_location=device)
+
+        elif dataset_name == "mnist":
+            kwargs["num_classes"] = 10
+            kwargs["input_channel"] = 1
+            # pdb.set_trace()
+            state_dict = torch.load(script_dir + "/state_dicts/" + "mnist_" + arch + ".pt", map_location=device)
+
+        elif dataset_name == "fashion_mnist":
+            kwargs["num_classes"] = 10
+            kwargs["input_channel"] = 1
+            state_dict = torch.load(script_dir + "/state_dicts/" + "fashion_mnist_" + arch + ".pt", map_location=device)
 
         elif dataset_name == "CIFAR100":
             kwargs["num_classes"] = 100
